@@ -360,13 +360,13 @@ DELIMITER $$
 -- Create catalog_get_departments_list stored procedure
 CREATE PROCEDURE catalog_get_departments_list()
 BEGIN
-  SELECT department_id, name FROM department ORDER BY department_id;
+  SELECT department_id, name, description FROM department ORDER BY department_id;
 END$$
 
 -- Create catalog_get_department_details stored procedure
 CREATE PROCEDURE catalog_get_department_details(IN inDepartmentId INT)
 BEGIN
-  SELECT name, description
+  SELECT department_id, name, description
   FROM   department
   WHERE  department_id = inDepartmentId;
 END$$
@@ -374,7 +374,7 @@ END$$
 -- Create catalog_get_categories_list stored procedure
 CREATE PROCEDURE catalog_get_categories_list(IN inDepartmentId INT)
 BEGIN
-  SELECT   category_id, name
+  SELECT   category_id, name, description, department_id
   FROM     category
   WHERE    department_id = inDepartmentId
   ORDER BY category_id;
@@ -383,7 +383,7 @@ END$$
 -- Create catalog_get_category_details stored procedure
 CREATE PROCEDURE catalog_get_category_details(IN inCategoryId INT)
 BEGIN
-  SELECT name, description
+  SELECT category_id, name, description, department_id
   FROM   category
   WHERE  category_id = inCategoryId;
 END$$
@@ -432,7 +432,7 @@ END$$
 -- Create catalog_count_products_on_department stored procedure
 CREATE PROCEDURE catalog_count_products_on_department(IN inDepartmentId INT)
 BEGIN
-  SELECT DISTINCT COUNT(*) AS products_on_department_count
+  SELECT  COUNT(*) AS products_on_department_count
   FROM            product p
   INNER JOIN      product_category pc
                     ON p.product_id = pc.product_id
@@ -448,7 +448,7 @@ CREATE PROCEDURE catalog_get_products_on_department(
   IN inProductsPerPage INT, IN inStartItem INT)
 BEGIN
   PREPARE statement FROM
-    "SELECT DISTINCT p.product_id, p.name,
+    "SELECT  p.product_id, p.name,
                      IF(LENGTH(p.description) <= ?,
                         p.description,
                         CONCAT(LEFT(p.description, ?),
@@ -477,8 +477,7 @@ END$$
 CREATE PROCEDURE catalog_count_products_on_catalog()
 BEGIN
   SELECT COUNT(*) AS products_on_catalog_count
-  FROM   product
-  WHERE  display = 1 OR display = 3;
+  FROM   product;
 END$$
 
 -- Create catalog_get_products_on_catalog stored procedure
@@ -494,8 +493,6 @@ BEGIN
                         '...')) AS description,
               price, discounted_price, thumbnail
      FROM     product
-     WHERE    display = 1 OR display = 3
-     ORDER BY display DESC
      LIMIT    ?, ?";
 
   SET @p1 = inShortProductDescriptionLength;
@@ -510,7 +507,7 @@ END$$
 CREATE PROCEDURE catalog_get_product_details(IN inProductId INT)
 BEGIN
   SELECT product_id, name, description,
-         price, discounted_price, image, image_2
+         price, discounted_price, image, image_2, thumbnail, display
   FROM   product
   WHERE  product_id = inProductId;
 END$$
@@ -570,12 +567,12 @@ CREATE PROCEDURE catalog_count_search_result(
 BEGIN
   IF inAllWords = "on" THEN
     PREPARE statement FROM
-      "SELECT   count(*)
+      "SELECT   count(*) AS search_count
        FROM     product
        WHERE    MATCH (name, description) AGAINST (? IN BOOLEAN MODE)";
   ELSE
     PREPARE statement FROM
-      "SELECT   count(*)
+      "SELECT   count(*) AS search_count
        FROM     product
        WHERE    MATCH (name, description) AGAINST (?)";
   END IF;
@@ -873,12 +870,27 @@ BEGIN
   END IF;
 END$$
 
--- Create catalog_get_categories stored procedure
-CREATE PROCEDURE catalog_get_categories()
+-- Create catalog_count_categories stored procedure
+CREATE DEFINER=`root`@`localhost` PROCEDURE `catalog_count_categories`()
 BEGIN
-  SELECT   category_id, name, description
-  FROM     category
-  ORDER BY category_id;
+  SELECT COUNT(*) AS categories_count
+  FROM   category;
+END
+
+-- Create catalog_get_categories stored procedure
+CREATE DEFINER=`root`@`localhost` PROCEDURE `catalog_get_categories`(IN inCategoriesPerPage INT,
+  IN inStartItem INT)
+BEGIN
+  PREPARE statement FROM
+    "SELECT   category_id, name, description
+     FROM     category
+     ORDER BY category_id
+     LIMIT    ?, ?";
+
+  SET @p1 = inStartItem;
+  SET @p2 = inCategoriesPerPage;
+
+  EXECUTE statement USING @p1, @p2;
 END$$
 
 -- Create catalog_get_product_info stored procedure
