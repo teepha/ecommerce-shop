@@ -10,6 +10,8 @@
  * NB: Check the BACKEND CHALLENGE TEMPLATE DOCUMENTATION in the readme of this repository to see our recommended
  *  endpoints, request body/param, and response object for each of these method
  */
+import { sequelize } from '../database/models';
+
 class AttributeController {
   /**
    * This method get all attributes
@@ -19,7 +21,12 @@ class AttributeController {
    */
   static async getAllAttributes(req, res, next) {
     // write code to get all attributes from the database here
-    return res.status(200).json({ message: 'this works' });
+    try {
+      const attributes = await sequelize.query('CALL  catalog_get_attributes()');
+      return res.status(200).json(attributes);
+    } catch (error) {
+      return next(error);
+    }
   }
 
   /**
@@ -30,7 +37,18 @@ class AttributeController {
    */
   static async getSingleAttribute(req, res, next) {
     // Write code to get a single attribute using the attribute id provided in the request param
-    return res.status(200).json({ message: 'this works' });
+    const { attribute_id } = req.params;
+    try {
+      const attributeDetails = await sequelize.query(
+        'CALL catalog_get_attribute_details(:inAttributeId)',
+        {
+          replacements: { inAttributeId: attribute_id },
+        }
+      );
+      return res.status(200).json(...attributeDetails);
+    } catch (error) {
+      return next(error);
+    }
   }
 
   /**
@@ -42,7 +60,18 @@ class AttributeController {
   static async getAttributeValues(req, res, next) {
     // Write code to get all attribute values for an attribute using the attribute id provided in the request param
     // This function takes the param: attribute_id
-    return res.status(200).json({ message: 'this works' });
+    const { attribute_id } = req.params;
+    try {
+      const attributeValues = await sequelize.query(
+        'CALL catalog_get_attribute_values(:inAttributeId)',
+        {
+          replacements: { inAttributeId: attribute_id },
+        }
+      );
+      return res.status(200).json(attributeValues);
+    } catch (error) {
+      return next(error);
+    }
   }
 
   /**
@@ -53,7 +82,18 @@ class AttributeController {
    */
   static async getProductAttributes(req, res, next) {
     // Write code to get all attribute values for a product using the product id provided in the request param
-    return res.status(200).json({ message: 'this works' });
+    const { product_id } = req.params;
+    try {
+      const productAttribute = await sequelize.query(
+        'CALL catalog_get_product_attributes(:inProductId)',
+        {
+          replacements: { inProductId: product_id },
+        }
+      );
+      return res.status(200).json(productAttribute);
+    } catch (error) {
+      return next(error);
+    }
   }
 }
 
