@@ -2,7 +2,7 @@
  * The Product controller contains all static methods that handles product request
  * Some methods work fine, some needs to be implemented from scratch while others may contain one or two bugs
  * The static methods and their function include:
- * 
+ *
  * - getAllProducts - Return a paginated list of products
  * - searchProducts - Returns a list of product that matches the search query string
  * - getProductsByCategory - Returns all products in a product category
@@ -13,20 +13,12 @@
  * - getAllCategories - Returns all categories
  * - getSingleCategory - Returns a single category
  * - getDepartmentCategories - Returns all categories in a department
- * 
+ *
  *  NB: Check the BACKEND CHALLENGE TEMPLATE DOCUMENTATION in the readme of this repository to see our recommended
  *  endpoints, request body/param, and response object for each of these method
  */
-import {
-  Product,
-  Department,
-  AttributeValue,
-  Attribute,
-  Category,
-  Sequelize,
-} from '../database/models';
-
-const { Op } = Sequelize;
+import { sequelize } from '../database/models';
+import { paginateItems } from '../helpers/pagination.helper';
 
 /**
  *
@@ -45,18 +37,22 @@ class ProductController {
    * @memberof ProductController
    */
   static async getAllProducts(req, res, next) {
-    const { query } = req;
-    const { page, limit, offset } = query
-    const sqlQueryMap = {
-      limit,
-      offset,
-    };
+    const pagination = paginateItems(req);
     try {
-      const products = await Product.findAndCountAll(sqlQueryMap);
-      return res.status(200).json({
-        status: true,
-        products,
-      });
+      const allProductsCount = await sequelize.query('CALL catalog_count_products_on_catalog()');
+      const allProducts = await sequelize.query(
+        'CALL catalog_get_products_on_catalog(:inShortProductDescriptionLength, :inProductsPerPage, :inStartItem)',
+        {
+          replacements: {
+            inShortProductDescriptionLength: pagination.descriptionLength,
+            inProductsPerPage: pagination.limit,
+            inStartItem: pagination.offset,
+          },
+        }
+      );
+      return res
+        .status(200)
+        .json({ count: allProductsCount[0].products_on_catalog_count, rows: allProducts });
     } catch (error) {
       return next(error);
     }
@@ -72,11 +68,43 @@ class ProductController {
    * @returns {json} json object with status and product data
    * @memberof ProductController
    */
-  static async searchProduct(req, res, next) {
-    const { query_string, all_words } = req.query;  // eslint-disable-line
+  static async searchProducts(req, res, next) {
     // all_words should either be on or off
     // implement code to search product
-    return res.status(200).json({ message: 'this works' });
+    let { query_string, all_words } = req.query;
+    if (!query_string) {
+      return res.status(400).json({ message: 'Query string is required!' });
+    }
+    if (!all_words) {
+      all_words = 'on';
+    }
+    const pagination = paginateItems(req);
+    try {
+      const productsCount = await sequelize.query(
+        'CALL catalog_count_search_result(:inSearchString, :inAllWords)',
+        {
+          replacements: {
+            inSearchString: query_string,
+            inAllWords: all_words,
+          },
+        }
+      );
+      const products = await sequelize.query(
+        'CALL catalog_search(:inSearchString, :inAllWords, :inShortProductDescriptionLength, :inProductsPerPage, :inStartItem)',
+        {
+          replacements: {
+            inSearchString: query_string,
+            inAllWords: all_words,
+            inShortProductDescriptionLength: pagination.descriptionLength,
+            inProductsPerPage: pagination.limit,
+            inStartItem: pagination.offset,
+          },
+        }
+      );
+      return res.status(200).json({ count: productsCount[0].search_count, rows: products });
+    } catch (error) {
+      return next(error);
+    }
   }
 
   /**
@@ -90,23 +118,31 @@ class ProductController {
    * @memberof ProductController
    */
   static async getProductsByCategory(req, res, next) {
-
+    const { category_id } = req.params;
+    const pagination = paginateItems(req);
     try {
-      const { category_id } = req.params; // eslint-disable-line
-      const products = await Product.findAndCountAll({
-        include: [
-          {
-            model: Department,
-            where: {
-              category_id,
-            },
-            attributes: [],
+      const productsCount = await sequelize.query(
+        'CALL catalog_count_products_in_category(:inCategoryId)',
+        {
+          replacements: {
+            inCategoryId: category_id,
           },
-        ],
-        limit,
-        offset,
-      });
-      return next(products);
+        }
+      );
+      const categoryProducts = await sequelize.query(
+        'CALL catalog_get_products_in_category(:inCategoryId, :inShortProductDescriptionLength, :inProductsPerPage, :inStartItem)',
+        {
+          replacements: {
+            inCategoryId: category_id,
+            inShortProductDescriptionLength: pagination.descriptionLength,
+            inProductsPerPage: pagination.limit,
+            inStartItem: pagination.offset,
+          },
+        }
+      );
+      return res
+        .status(200)
+        .json({ count: productsCount[0].categories_count, rows: categoryProducts });
     } catch (error) {
       return next(error);
     }
@@ -124,6 +160,34 @@ class ProductController {
    */
   static async getProductsByDepartment(req, res, next) {
     // implement the method to get products by department
+    const { department_id } = req.params;
+    const pagination = paginateItems(req);
+    try {
+      const productsCount = await sequelize.query(
+        'CALL catalog_count_products_on_department(:inDepartmentId)',
+        {
+          replacements: {
+            inDepartmentId: department_id,
+          },
+        }
+      );
+      const departmentProducts = await sequelize.query(
+        'CALL catalog_get_products_on_department(:inDepartmentId, :inShortProductDescriptionLength, :inProductsPerPage, :inStartItem)',
+        {
+          replacements: {
+            inDepartmentId: department_id,
+            inShortProductDescriptionLength: pagination.descriptionLength,
+            inProductsPerPage: pagination.limit,
+            inStartItem: pagination.offset,
+          },
+        }
+      );
+      return res
+        .status(200)
+        .json({ count: productsCount[0].products_on_department_count, rows: departmentProducts });
+    } catch (error) {
+      return next(error);
+    }
   }
 
   /**
@@ -137,28 +201,21 @@ class ProductController {
    * @memberof ProductController
    */
   static async getProduct(req, res, next) {
-
-    const { product_id } = req.params;  // eslint-disable-line
+    const { product_id } = req.params; // eslint-disable-line
     try {
-      const product = await Product.findByPk(product_id, {
-        include: [
-          {
-            model: AttributeValue,
-            as: 'attributes',
-            attributes: ['value'],
-            through: {
-              attributes: [],
-            },
-            include: [
-              {
-                model: Attribute,
-                as: 'attribute_type',
-              },
-            ],
-          },
-        ],
+      const product = await sequelize.query('CALL catalog_get_product_details(:inProductId)', {
+        replacements: { inProductId: product_id },
       });
-      return res.status(500).json({ message: 'This works!!1' });
+      if (product.length) {
+        return res.status(200).json(...product);
+      }
+      return res.status(404).json({
+        error: {
+          status: 404,
+          message: `Product with id ${product_id} does not exist`,
+          field: 'product_id',
+        },
+      });
     } catch (error) {
       return next(error);
     }
@@ -176,7 +233,7 @@ class ProductController {
    */
   static async getAllDepartments(req, res, next) {
     try {
-      const departments = await Department.findAll();
+      const departments = await sequelize.query('CALL catalog_get_departments_list()');
       return res.status(200).json(departments);
     } catch (error) {
       return next(error);
@@ -192,15 +249,20 @@ class ProductController {
   static async getDepartment(req, res, next) {
     const { department_id } = req.params; // eslint-disable-line
     try {
-      const department = await Department.findByPk(department_id);
-      if (department) {
-        return res.status(200).json(department);
+      const department = await sequelize.query(
+        'CALL catalog_get_department_details(:inDepartmentId)',
+        { replacements: { inDepartmentId: department_id } }
+      );
+      if (department.length) {
+        return res.status(200).json(...department);
       }
       return res.status(404).json({
         error: {
           status: 404,
-          message: `Department with id ${department_id} does not exist`,  // eslint-disable-line
-        }
+          code: 'DEP_02',
+          message: 'The department with this ID does not exist.',
+          field: 'department_id',
+        },
       });
     } catch (error) {
       return next(error);
@@ -215,7 +277,22 @@ class ProductController {
    */
   static async getAllCategories(req, res, next) {
     // Implement code to get all categories here
-    return res.status(200).json({ message: 'this works' });
+    const pagination = paginateItems(req);
+    try {
+      const categoriesCount = await sequelize.query('CALL catalog_count_categories()');
+      const categories = await sequelize.query(
+        'CALL catalog_get_categories(:inCategoriesPerPage, :inStartItem)',
+        {
+          replacements: {
+            inCategoriesPerPage: pagination.limit,
+            inStartItem: pagination.offset,
+          },
+        }
+      );
+      return res.status(200).json({ count: categoriesCount[0].categories_count, rows: categories });
+    } catch (error) {
+      return next(error);
+    }
   }
 
   /**
@@ -225,9 +302,28 @@ class ProductController {
    * @param {*} next
    */
   static async getSingleCategory(req, res, next) {
-    const { category_id } = req.params;  // eslint-disable-line
+    const { category_id } = req.params; // eslint-disable-line
     // implement code to get a single category here
-    return res.status(200).json({ message: 'this works' });
+    try {
+      const category = await sequelize.query('CALL catalog_get_category_details(:inCategoryId)', {
+        replacements: {
+          inCategoryId: category_id,
+        },
+      });
+      if (category.length) {
+        return res.status(200).json(...category);
+      }
+      return res.status(404).json({
+        error: {
+          status: 404,
+          code: 'CAT_01',
+          message: "Don't exist category with this ID.",
+          field: 'category_id',
+        },
+      });
+    } catch (error) {
+      return next(error);
+    }
   }
 
   /**
@@ -237,9 +333,21 @@ class ProductController {
    * @param {*} next
    */
   static async getDepartmentCategories(req, res, next) {
-    const { department_id } = req.params;  // eslint-disable-line
+    const { department_id } = req.params; // eslint-disable-line
     // implement code to get categories in a department here
-    return res.status(200).json({ message: 'this works' });
+    try {
+      const departmentCategories = await sequelize.query(
+        'CALL catalog_get_categories_list(:inDepartmentId)',
+        {
+          replacements: {
+            inDepartmentId: department_id,
+          },
+        }
+      );
+      return res.status(200).json(departmentCategories);
+    } catch (error) {
+      return next(error);
+    }
   }
 }
 
