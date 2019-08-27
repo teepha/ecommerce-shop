@@ -1202,7 +1202,7 @@ BEGIN
   INSERT INTO customer (name, email, password)
          VALUES (inName, inEmail, inPassword);
 
-  SELECT LAST_INSERT_ID();
+  SELECT LAST_INSERT_ID() AS customer_id;
 END$$
 
 -- Create customer_get_customer stored procedure
