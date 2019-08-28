@@ -33,6 +33,16 @@ router.post(
   checkValidationResult,
   CustomerController.login
 );
+router.post(
+  '/customers/facebook',
+  body(['access_token'])
+    .trim()
+    .not()
+    .isEmpty()
+    .withMessage('is required.'),
+  checkValidationResult,
+  CustomerController.facebookLogin
+);
 router.get('/customer', verifyToken, CustomerController.getCustomerProfile);
 router.put(
   '/customer',

@@ -3,9 +3,9 @@ import { decodeToken } from '../helpers/jwt.helper';
 /**
  * @description A middleware to verify if Token is supplied,
  *      decodes the token and append the customer_id instance to the request object
- * @param {object} req HTTP request object
- * @param {object} res HTTP response object
- * @returns {object} HTTP response
+ * @param {object} req express request object
+ * @param {object} res express response object
+ * @param {object} next next middleware
  * @method verifyToken
  */
 

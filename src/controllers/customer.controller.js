@@ -14,6 +14,7 @@
  */
 import { Customer, sequelize } from '../database/models';
 import { generateToken } from '../helpers/jwt.helper';
+import { fetchFacebookData } from '../helpers/fetchFacebookData.helper';
 
 /**
  *
@@ -48,14 +49,11 @@ class CustomerController {
       });
     }
     try {
-      const newCustomer = await sequelize.query(
-        'CALL customer_add(:inName, :inEmail, :inPassword)',
-        { replacements: { inName: name, inEmail: email, inPassword: password } }
-      );
+      const newCustomer = await Customer.create(req.body);
       const customer = await sequelize.query('CALL customer_get_customer(:inCustomerId)', {
-        replacements: { inCustomerId: newCustomer[0].customer_id },
+        replacements: { inCustomerId: newCustomer.dataValues.customer_id },
       });
-      const accessToken = generateToken({ customer_id: newCustomer[0].customer_id });
+      const accessToken = generateToken({ customer_id: newCustomer.dataValues.customer_id });
       return res.status(201).json({
         customer: customer[0],
         accessToken: `Bearer ${accessToken}`,
@@ -111,6 +109,52 @@ class CustomerController {
           message: "The email doesn't exist.",
           field: 'email',
         },
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   * Facebook login a customer
+   *
+   * @static
+   * @param {object} req express request object
+   * @param {object} res express response object
+   * @param {object} next next middleware
+   * @returns {json} json object with status, and access token
+   * @memberof CustomerController
+   */
+  static async facebookLogin(req, res, next) {
+    const { access_token } = req.body;
+    try {
+      const {
+        data: { email, name },
+      } = await fetchFacebookData(access_token);
+      const foundCustomer = await Customer.findOne({
+        where: { email },
+      });
+      if (foundCustomer) {
+        const accessToken = generateToken({ customer_id: foundCustomer.customer_id });
+        return res.status(200).json({
+          customer: foundCustomer.getSafeDataValues(),
+          accessToken: `Bearer ${accessToken}`,
+          expiresIn: '24h',
+        });
+      }
+      const newCustomer = await Customer.create({
+        email,
+        name,
+        password: name,
+      });
+      const customer = await sequelize.query('CALL customer_get_customer(:inCustomerId)', {
+        replacements: { inCustomerId: newCustomer.dataValues.customer_id },
+      });
+      const accessToken = generateToken({ customer_id: customer.customer_id });
+      return res.status(201).json({
+        customer: customer[0],
+        accessToken: `Bearer ${accessToken}`,
+        expiresIn: '24h',
       });
     } catch (error) {
       return next(error);
