@@ -72,6 +72,6 @@ router.post(
 );
 router.get('/orders/inCustomer', verifyToken, ShoppingCartController.getCustomerOrders);
 router.get('/orders/:order_id', verifyToken, ShoppingCartController.getOrderSummary);
-router.post('/stripe/charge', ShoppingCartController.processStripePayment);
+router.post('/stripe/charge', verifyToken, ShoppingCartController.processStripePayment);
 
 export default router;

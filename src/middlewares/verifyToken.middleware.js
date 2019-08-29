@@ -10,7 +10,7 @@ import { decodeToken } from '../helpers/jwt.helper';
  */
 
 export const verifyToken = async (req, res, next) => {
-  const accessToken = req.headers.authorization;
+  const accessToken = req.headers.user_key;
   if (!accessToken || !accessToken.startsWith('Bearer ')) {
     res.status(401).json({
       error: {
