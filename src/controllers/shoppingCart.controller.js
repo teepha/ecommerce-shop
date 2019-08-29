@@ -18,7 +18,10 @@
  *  endpoints, request body/param, and response object for each of these method
  */
 import uniqid from 'uniqid';
+import Stripe from 'stripe';
 import { sequelize } from '../database/models';
+
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 /**
  *
@@ -250,12 +253,56 @@ class ShoppingCartController {
    * @param {*} next
    */
   static async processStripePayment(req, res, next) {
-    const { email, stripeToken, order_id } = req.body; // eslint-disable-line
-    const { customer_id } = req;  // eslint-disable-line
+    const { stripeToken, order_id, description } = req.body; // eslint-disable-line
+    const { customer_id } = req; // eslint-disable-line
     try {
       // implement code to process payment and send order confirmation email here
+      const customerDetails = await sequelize.query('CALL customer_get_customer(:inCustomerId)', {
+        replacements: { inCustomerId: customer_id },
+      });
+      const customerOrders = await sequelize.query(
+        'CALL orders_get_by_customer_id(:inCustomerId)',
+        {
+          replacements: { inCustomerId: customer_id },
+        }
+      );
+      if (customerOrders[0].status) {
+        return res.status(400).json({
+          error: {
+            code: 'ORD_01',
+            message: 'Payment has been made for this order',
+          },
+        });
+      }
+      const customer = await stripe.customers.create({
+        email: customerDetails[0].email,
+      });
+      const source = await stripe.customers.createSource(customer.id, {
+        source: stripeToken,
+      });
+      const stripeCharges = await stripe.charges.create({
+        amount: parseInt(customerOrders[0].total_amount) * 100,
+        currency: 'usd',
+        description,
+        customer: source.customer,
+      });
+      if (stripeCharges.paid) {
+        await sequelize.query('CALL orders_update_status(:inOrderId, :inStatus)', {
+          replacements: { inOrderId: order_id, inStatus: 1 },
+        });
+        return res.status(200).json({
+          message: 'Payment successful!',
+          stripeCharges,
+        });
+      }
     } catch (error) {
-      return next(error);
+      return res.status(500).json({
+        error: {
+          code: error.code,
+          message: error.message,
+          field: error.param,
+        },
+      });
     }
   }
 }
