@@ -20,6 +20,7 @@
 import uniqid from 'uniqid';
 import Stripe from 'stripe';
 import { sequelize } from '../database/models';
+import { sendEmail } from '../emailNotification/email';
 
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -235,12 +236,35 @@ class ShoppingCartController {
    */
   static async getOrderSummary(req, res, next) {
     const { order_id } = req.params; // eslint-disable-line
-    const { customer_id } = req; // eslint-disable-line
     try {
-      const result = await sequelize.query('CALL orders_get_order_details(:inOrderId)', {
+      const orderSummary = await sequelize.query('CALL orders_get_order_details(:inOrderId)', {
         replacements: { inOrderId: order_id },
       });
-      return res.status(200).json(result);
+      return res.status(200).json(orderSummary);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   *
+   *
+   * @static
+   * @param {obj} req express request object
+   * @param {obj} res express response object
+   * @returns {json} returns json response with order summary
+   * @memberof ShoppingCartController
+   */
+  static async getOrderShortDetail(req, res, next) {
+    const { order_id } = req.params; // eslint-disable-line
+    try {
+      const orderShortDetail = await sequelize.query(
+        'CALL orders_get_order_short_details(:inOrderId)',
+        {
+          replacements: { inOrderId: order_id },
+        }
+      );
+      return res.status(200).json(...orderShortDetail);
     } catch (error) {
       return next(error);
     }
@@ -285,11 +309,13 @@ class ShoppingCartController {
         currency: 'usd',
         description,
         customer: source.customer,
+        metadata: { order_id },
       });
       if (stripeCharges.paid) {
         await sequelize.query('CALL orders_update_status(:inOrderId, :inStatus)', {
           replacements: { inOrderId: order_id, inStatus: 1 },
         });
+        await sendEmail(customerDetails[0].email, customerOrders[0], description);
         return res.status(200).json({
           message: 'Payment successful!',
           stripeCharges,
