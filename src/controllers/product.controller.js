@@ -108,7 +108,7 @@ class ProductController {
   }
 
   /**
-   * get all products by caetgory
+   * get all products by category
    *
    * @static
    * @param {object} req express request object
