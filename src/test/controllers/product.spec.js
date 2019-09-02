@@ -1,8 +1,22 @@
 import chai, { expect } from 'chai';
 import chaiHttp from 'chai-http';
+import faker from 'faker';
 import app from '../../index';
 
 chai.use(chaiHttp);
+
+const createCustomer = async () => {
+  const customer = await chai
+    .request(app)
+    .post('/customers')
+    .send({
+      name: faker.name.findName(),
+      email: faker.internet.email(),
+      password: 'password',
+    });
+
+  return customer.body;
+};
 
 describe('API Tests for Product Controller', () => {
   describe('API Tests for Product functions', () => {
@@ -70,38 +84,26 @@ describe('API Tests for Product Controller', () => {
     });
 
     it('should add a new product review', async () => {
-      const user = await chai
-        .request(app)
-        .post('/customers/login')
-        .send({
-          email: 'testUser@email.com',
-          password: 'password',
-        });
+      const customer = await createCustomer();
       const response = await chai
         .request(app)
         .post(`/products/${product_id}/reviews`)
-        .set('USER_KEY', user.body.accessToken)
+        .set('USER_KEY', customer.accessToken)
         .send({
           review: 'great product',
           rating: 5,
         });
       expect(response.status).to.equal(201);
       expect(response.body).to.be.an('object');
-      expect(response.body.name).to.equal(user.body.customer.name);
+      expect(response.body.name).to.equal(customer.customer.name);
     });
 
     it('should return an error if the review field is empty when adding a new product review', async () => {
-      const user = await chai
-        .request(app)
-        .post('/customers/login')
-        .send({
-          email: 'testUser@email.com',
-          password: 'password',
-        });
+      const customer = await createCustomer();
       const response = await chai
         .request(app)
         .post(`/products/${product_id}/reviews`)
-        .set('USER_KEY', user.body.accessToken)
+        .set('USER_KEY', customer.accessToken)
         .send({
           review: '  ',
           rating: 5,

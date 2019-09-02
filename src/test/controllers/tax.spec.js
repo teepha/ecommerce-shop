@@ -16,6 +16,6 @@ describe('API Tests for Tax Controller functions', () => {
   it('should get a single tax using the tax_id supplied', async () => {
     const response = await chai.request(app).get(`/tax/${tax_id}`);
     expect(response.status).to.equal(200);
-    expect(response.body.tax_id).to.be.an(tax_id);
+    expect(response.body.tax_id).to.equal(tax_id);
   });
 });

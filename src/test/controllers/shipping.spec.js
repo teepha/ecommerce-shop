@@ -18,4 +18,11 @@ describe('API Tests for Shipping Controller functions', () => {
     expect(response.status).to.equal(200);
     expect(response.body).to.be.an('array');
   });
+
+  it('should return an error if shipping_region_id is supplied is not a number', async () => {
+    const response = await chai.request(app).get(`/shipping/regions/number`);
+    expect(response.status).to.equal(400);
+    expect(response.body.error).to.be.an('object');
+    expect(response.body.error.message).to.equal('The shipping_region_id is not a number.');
+  });
 });

@@ -34,7 +34,7 @@ class CustomerController {
    */
   static async create(req, res, next) {
     // Implement the function to create the customer account
-    const { name, email, password } = req.body;
+    const { email } = req.body;
     const foundCustomer = await Customer.findOne({
       where: { email },
     });
