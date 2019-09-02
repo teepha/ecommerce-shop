@@ -875,7 +875,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `catalog_count_categories`()
 BEGIN
   SELECT COUNT(*) AS categories_count
   FROM   category;
-END
+END$$
 
 -- Create catalog_get_categories stored procedure
 CREATE DEFINER=`root`@`localhost` PROCEDURE `catalog_get_categories`(IN inCategoriesPerPage INT,
