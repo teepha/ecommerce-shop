@@ -237,7 +237,6 @@ describe('API Tests for Customer Controller functions', async () => {
 
   describe('API Tests for PUT </customer/creditCard>', () => {
     it('should update a customer record sucessfully', async () => {
-      console.log('>>>>>>>>>', customer.body);
       const response = await chai
         .request(app)
         .put('/customer/creditCard')

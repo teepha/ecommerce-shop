@@ -5,7 +5,7 @@ import app from '../../index';
 chai.use(chaiHttp);
 
 describe('API Tests for Shipping Controller functions', () => {
-  const shipping_region_id = 2;
+  const shipping_region_id = 1;
 
   it('should get all shipping regions', async () => {
     const response = await chai.request(app).get('/shipping/regions');

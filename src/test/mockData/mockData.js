@@ -44,12 +44,31 @@ export const userData = {
     region: 'ikeja',
     postal_code: '100222',
     country: 'naija',
-    shipping_region_id: 2,
+    shipping_region_id: 1,
   },
   validCreditCard: {
     credit_card: '4242 4242 4242 4242',
   },
   invalidCreditCard: {
     credit_card: '0000 0000 0000 0000',
+  },
+};
+
+export const shoppingData = {
+  itemsToCart: {
+    product_id: 1,
+    attributes: 'Black',
+  },
+  itemsToOrder: {
+    shipping_id: 1,
+    tax_id: 1,
+  },
+  paymentData: {
+    stripeToken: 'tok_visa',
+    description: 'My order',
+  },
+  invalidPaymentData: {
+    stripeToken: 'sometoken',
+    description: 'My second order',
   },
 };
