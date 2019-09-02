@@ -108,7 +108,7 @@ class ProductController {
   }
 
   /**
-   * get all products by caetgory
+   * get all products by category
    *
    * @static
    * @param {object} req express request object
@@ -203,7 +203,7 @@ class ProductController {
   static async getProduct(req, res, next) {
     const { product_id } = req.params; // eslint-disable-line
     try {
-      const product = await sequelize.query('CALL catalog_get_product_details(:inProductId)', {
+      const product = await sequelize.query('CALL catalog_get_product_info(:inProductId)', {
         replacements: { inProductId: product_id },
       });
       if (product.length) {
@@ -345,6 +345,137 @@ class ProductController {
         }
       );
       return res.status(200).json(departmentCategories);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   * This method should get list of categories in a product
+   * @param {*} req
+   * @param {*} res
+   * @param {*} next
+   */
+  static async getProductCategories(req, res, next) {
+    const { product_id } = req.params; // eslint-disable-line
+    // implement code to get categories in a product here
+    try {
+      const productCategories = await sequelize.query(
+        'CALL catalog_get_categories_for_product(:inProductId)',
+        {
+          replacements: {
+            inProductId: product_id,
+          },
+        }
+      );
+      return res.status(200).json(productCategories);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   * get product details
+   *
+   * @static
+   * @param {object} req express request object
+   * @param {object} res express response object
+   * @param {object} next next middleware
+   * @returns {json} json object with status and product details
+   * @memberof ProductController
+   */
+  static async getProductDetails(req, res, next) {
+    const { product_id } = req.params; // eslint-disable-line
+    try {
+      const productDetails = await sequelize.query(
+        'CALL catalog_get_product_details(:inProductId)',
+        {
+          replacements: { inProductId: product_id },
+        }
+      );
+      return res.status(200).json(...productDetails);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   * get product locations
+   *
+   * @static
+   * @param {object} req express request object
+   * @param {object} res express response object
+   * @param {object} next next middleware
+   * @returns {json} json object with status and product locations
+   * @memberof ProductController
+   */
+  static async getProductLocations(req, res, next) {
+    const { product_id } = req.params; // eslint-disable-line
+    try {
+      const productLocations = await sequelize.query(
+        'CALL catalog_get_product_locations(:inProductId)',
+        {
+          replacements: { inProductId: product_id },
+        }
+      );
+      return res.status(200).json(...productLocations);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   * get product reviews
+   *
+   * @static
+   * @param {object} req express request object
+   * @param {object} res express response object
+   * @param {object} next next middleware
+   * @returns {json} json object with status and product reviews
+   * @memberof ProductController
+   */
+  static async getProductReviews(req, res, next) {
+    const { product_id } = req.params; // eslint-disable-line
+    try {
+      const productReviews = await sequelize.query(
+        'CALL catalog_get_product_reviews(:inProductId)',
+        {
+          replacements: { inProductId: product_id },
+        }
+      );
+      return res.status(200).json(productReviews);
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   * add product review
+   *
+   * @static
+   * @param {object} req express request object
+   * @param {object} res express response object
+   * @param {object} next next middleware
+   * @returns {json} json object with status and product reviews
+   * @memberof ProductController
+   */
+  static async createProductReview(req, res, next) {
+    const { customer_id } = req;
+    const { product_id } = req.params;
+    const { review, rating } = req.body;
+    try {
+      const productReview = await sequelize.query(
+        'CALL catalog_create_product_review(:inCustomerId, :inProductId, :inReview, :inRating)',
+        {
+          replacements: {
+            inCustomerId: customer_id,
+            inProductId: product_id,
+            inReview: review,
+            inRating: rating,
+          },
+        }
+      );
+      return res.status(201).json(...productReview);
     } catch (error) {
       return next(error);
     }

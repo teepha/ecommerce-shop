@@ -34,7 +34,7 @@ class CustomerController {
    */
   static async create(req, res, next) {
     // Implement the function to create the customer account
-    const { name, email, password } = req.body;
+    const { email } = req.body;
     const foundCustomer = await Customer.findOne({
       where: { email },
     });
@@ -78,17 +78,16 @@ class CustomerController {
     // implement function to login to user account
     const { email, password } = req.body;
     try {
-      const customer = await sequelize.query('CALL customer_get_login_info(:inEmail)', {
-        replacements: { inEmail: email },
-      });
-      if (customer.length) {
-        if (customer[0].password === password) {
-          const loginCustomer = await sequelize.query('CALL customer_get_customer(:inCustomerId)', {
-            replacements: { inCustomerId: customer[0].customer_id },
-          });
-          const accessToken = generateToken({ customer_id: customer[0].customer_id });
+      const customer = await Customer.findOne({ where: { email } });
+      if (customer) {
+        const matchedPassword = await customer.validatePassword(password);
+        if (matchedPassword) {
+          const payload = {
+            customer_id: customer.customer_id,
+          };
+          const accessToken = generateToken(payload);
           return res.status(200).json({
-            customer: loginCustomer[0],
+            customer: customer.getSafeDataValues(),
             accessToken: `Bearer ${accessToken}`,
             expiresIn: '24h',
           });

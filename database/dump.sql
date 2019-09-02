@@ -507,7 +507,7 @@ END$$
 CREATE PROCEDURE catalog_get_product_details(IN inProductId INT)
 BEGIN
   SELECT product_id, name, description,
-         price, discounted_price, image, image_2, thumbnail, display
+         price, discounted_price, image, image_2
   FROM   product
   WHERE  product_id = inProductId;
 END$$
@@ -875,7 +875,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `catalog_count_categories`()
 BEGIN
   SELECT COUNT(*) AS categories_count
   FROM   category;
-END
+END$$
 
 -- Create catalog_get_categories stored procedure
 CREATE DEFINER=`root`@`localhost` PROCEDURE `catalog_get_categories`(IN inCategoriesPerPage INT,
@@ -1479,8 +1479,18 @@ END$$
 CREATE PROCEDURE catalog_create_product_review(IN inCustomerId INT,
   IN inProductId INT, IN inReview TEXT, IN inRating SMALLINT)
 BEGIN
+  DECLARE reviewId INT;
+
   INSERT INTO review (customer_id, product_id, review, rating, created_on)
          VALUES (inCustomerId, inProductId, inReview, inRating, NOW());
+
+  SELECT LAST_INSERT_ID() INTO reviewId;
+
+  SELECT     c.name, r.review, r.rating, r.created_on
+  FROM       review r
+  INNER JOIN customer c
+               ON c.customer_id = r.customer_id
+  WHERE      r.review_id = reviewId;
 END$$
 
 -- Change back DELIMITER to ;
