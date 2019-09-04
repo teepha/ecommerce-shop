@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { body } from 'express-validator/check'; //to validate request body and params
+import { body } from 'express-validator/check';
 import CustomerController from '../../controllers/customer.controller';
 import { verifyToken } from '../../middlewares/verifyToken.middleware';
 import { checkValidationResult, validateCreditCard } from '../../middlewares/validation.middleware';
