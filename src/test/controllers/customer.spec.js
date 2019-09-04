@@ -115,11 +115,11 @@ describe('API Tests for Customer Controller functions', async () => {
   });
 
   describe('API Tests for POST </customers/facebook>', () => {
-    it(`should return a successfully create a customer record via facebook 
+    it(`should successfully create a customer record via facebook 
       with the accessToken provided`, async () => {
       mock
         .onGet(
-          'https://graph.facebook.com/me?fields=name,gender,location,email&access_token=someoneNew'
+          `https://graph.facebook.com/me?fields=name,gender,location,email&access_token=someoneNew`
         )
         .reply(200, {
           name: faker.name.findName(),
@@ -134,15 +134,16 @@ describe('API Tests for Customer Controller functions', async () => {
       expect(response.body.accessToken);
     });
 
-    it(`should return a successfully login a customer via facebook 
+    it(`should successfully log in a customer via facebook 
       with the accessToken provided`, async () => {
+      const customer = (await createCustomer(chai, app)).body;
       mock
         .onGet(
           'https://graph.facebook.com/me?fields=name,gender,location,email&access_token=testUser'
         )
         .reply(200, {
-          email: 'test.user@test.com',
-          name: 'Test Test',
+          email: customer.customer.email,
+          name: customer.customer.name,
         });
       const response = await chai
         .request(app)

@@ -46,8 +46,9 @@ describe('API Tests for ShoppingCart Controller', async () => {
 
   describe('API Tests for ShoppingCart functions', () => {
     it('should generate random unique id for cart identifier', async () => {
-      expect(cart.status).to.equal(200);
-      expect(cart.body).to.be.an('object');
+      const response = await chai.request(app).get('/shoppingcart/generateUniqueId');
+      expect(response.status).to.equal(200);
+      expect(response.body).to.be.an('object');
     });
 
     it('should add item to a cart with cart_id', async () => {
