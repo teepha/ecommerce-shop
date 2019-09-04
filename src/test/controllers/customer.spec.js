@@ -119,7 +119,7 @@ describe('API Tests for Customer Controller functions', async () => {
       with the accessToken provided`, async () => {
       mock
         .onGet(
-          `https://graph.facebook.com/me?fields=name,gender,location,email&access_token=someoneNew`
+          'https://graph.facebook.com/me?fields=name,gender,location,email&access_token=someoneNew'
         )
         .reply(200, {
           name: faker.name.findName(),

@@ -46,8 +46,12 @@ describe('API Tests for ShoppingCart Controller', async () => {
     });
 
     it('should add item to a cart with cart_id', async () => {
-      expect(newItem.status).to.equal(201);
-      expect(newItem.body).to.be.an('array');
+      const response = await chai
+        .request(app)
+        .post('/shoppingcart/add')
+        .send({ cart_id, ...shoppingData.itemsToCart });
+      expect(response.status).to.equal(201);
+      expect(response.body).to.be.an('array');
     });
 
     it('should get shopping cart using the cart_id', async () => {
@@ -94,7 +98,6 @@ describe('API Tests for ShoppingCart Controller', async () => {
         .set('USER_KEY', customer.accessToken);
       expect(response.status).to.equal(200);
       expect(response.body).to.be.an('array');
-      // expect(response.body[0].order_id).to.equal(order_id);
     });
 
     it('should get order summary', async () => {
