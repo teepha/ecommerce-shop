@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/teepha/ecommerce-shop.svg?branch=master)](https://travis-ci.org/teepha/ecommerce-shop) [![Coverage Status](https://coveralls.io/repos/github/teepha/ecommerce-shop/badge.svg?branch=master)](https://coveralls.io/github/teepha/ecommerce-shop?branch=master)
+[![Build Status](https://travis-ci.org/teepha/ecommerce-shop.svg?branch=master)](https://travis-ci.org/teepha/ecommerce-shop) 
 
 # Turing Back End Challenge
 To complete this challenge, you need to ensure all route returns a similar response object as described in our API guide.
