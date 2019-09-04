@@ -201,7 +201,7 @@ class ProductController {
    * @memberof ProductController
    */
   static async getProduct(req, res, next) {
-    const { product_id } = req.params; // eslint-disable-line
+    const { product_id } = req.params;
     try {
       const product = await sequelize.query('CALL catalog_get_product_info(:inProductId)', {
         replacements: { inProductId: product_id },

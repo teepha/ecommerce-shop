@@ -5,12 +5,6 @@ import { loginCustomer, shoppingData } from '../mockData/mockData';
 
 chai.use(chaiHttp);
 
-// before(async () => {
-//   // runs before all tests in this block
-//   cart = await generateCart();
-//   console.log('here>>', cart);
-// });
-
 describe('API Tests for ShoppingCart Controller', async () => {
   let cart, cart_id, item_id, order_id;
   const generateCart = async () => {
@@ -139,7 +133,7 @@ describe('API Tests for ShoppingCart Controller', async () => {
         .request(app)
         .post('/stripe/charge')
         .set('USER_KEY', customer.accessToken)
-        .send({ order_id, ...shoppingData.invalidPaymentData });
+        .send({ order_id, ...shoppingData.paymentData });
       expect(response.status).to.equal(400);
       expect(response.body.error).to.be.an('object');
       expect(response.body.error.message).to.equal('Payment has been made for this order');
